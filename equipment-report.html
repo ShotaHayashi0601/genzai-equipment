@@ -357,6 +357,40 @@
         color: #64748b;
         font-style: italic;
       }
+      .video-embed-wrap {
+        position: relative;
+        width: 100%;
+        max-width: 720px;
+        margin: 1rem 0;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #0f172a;
+        border: 1px solid #334155;
+      }
+      .video-embed-wrap::before {
+        content: '';
+        display: block;
+        padding-top: 56.25%; /* 16:9 */
+      }
+      .video-embed-wrap iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .video-embed-wrap .vp-link {
+        display: block;
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+        color: #93c5fd;
+        text-align: center;
+        text-decoration: none;
+        background: rgba(15, 23, 42, 0.9);
+      }
+      .video-embed-wrap .vp-link:hover {
+        text-decoration: underline;
+      }
 
       /* ========== Brand Icons (Simple Icons via CDN) ========== */
       .brand-icon {
@@ -612,31 +646,27 @@
         <p>まずは実際の動作をご覧ください。各機能の動作をデモ動画で確認いただけます。</p>
 
         <h3>動画 1: 備品一覧・検索・CSV出力</h3>
-        <div class="video-placeholder">
-          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
-          <div class="vp-title">備品一覧・検索・CSV出力</div>
-          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        <div class="video-embed-wrap">
+          <iframe src="https://www.youtube.com/embed/NhoqIA8Nuqk" title="Genzai 備品一覧・検索・CSV出力" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <a class="vp-link" href="https://youtu.be/NhoqIA8Nuqk" target="_blank" rel="noopener noreferrer">YouTubeで開く</a>
         </div>
 
         <h3>動画 2: 備品登録・編集・複写</h3>
-        <div class="video-placeholder">
-          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
-          <div class="vp-title">備品登録・編集・複写</div>
-          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        <div class="video-embed-wrap">
+          <iframe src="https://www.youtube.com/embed/DPSFga54_fY" title="Genzai 備品登録・編集・複写" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <a class="vp-link" href="https://youtu.be/DPSFga54_fY" target="_blank" rel="noopener noreferrer">YouTubeで開く</a>
         </div>
 
-        <h3>動画 3: 履歴管理・画像管理・添付資料管理</h3>
-        <div class="video-placeholder">
-          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
-          <div class="vp-title">履歴管理・画像管理・添付資料管理</div>
-          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        <h3>動画 3: 画像管理・添付資料管理・履歴管理</h3>
+        <div class="video-embed-wrap">
+          <iframe src="https://www.youtube.com/embed/tuaRYpjtl2g" title="Genzai 画像管理・添付資料管理・履歴管理" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <a class="vp-link" href="https://youtu.be/tuaRYpjtl2g" target="_blank" rel="noopener noreferrer">YouTubeで開く</a>
         </div>
 
         <h3>動画 4: 企業管理</h3>
-        <div class="video-placeholder">
-          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
-          <div class="vp-title">企業管理</div>
-          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        <div class="video-embed-wrap">
+          <iframe src="https://www.youtube.com/embed/xsuzUKZvuks" title="Genzai 企業管理" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <a class="vp-link" href="https://youtu.be/xsuzUKZvuks" target="_blank" rel="noopener noreferrer">YouTubeで開く</a>
         </div>
       </section>
 
