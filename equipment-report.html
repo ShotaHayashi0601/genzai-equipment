@@ -1,0 +1,3157 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Genzai — 備品管理・企業管理 実装報告</title>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <style>
+      /* ========== Reset & Base ========== */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+        font-size: 15px;
+      }
+      body {
+        font-family:
+          'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Meiryo', sans-serif;
+        color: #1a1a2e;
+        background: #f8f9fc;
+        line-height: 1.7;
+      }
+
+      /* ========== Hero (compact) ========== */
+      .hero {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e3a5f 50%,
+          #0f172a 100%
+        );
+        color: #fff;
+        padding: 2.5rem 2rem 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.5;
+      }
+      .hero-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .hero-badge {
+        display: inline-block;
+        background: rgba(59, 130, 246, 0.25);
+        color: #93c5fd;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.75rem;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+      .hero h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+      }
+      .hero p {
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+      .hero-meta {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 0.75rem;
+        font-size: 0.78rem;
+        color: #64748b;
+      }
+      .hero-meta span {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+
+      /* ========== Layout ========== */
+      .container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+      }
+
+      /* ========== Table of Contents ========== */
+      .toc {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin: 2rem auto;
+        max-width: 820px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .toc h2 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #334155;
+      }
+      .toc ol {
+        padding-left: 1.2rem;
+      }
+      .toc li {
+        margin-bottom: 0.35rem;
+        font-size: 0.88rem;
+      }
+      .toc a {
+        color: #2563eb;
+        text-decoration: none;
+      }
+      .toc a:hover {
+        text-decoration: underline;
+      }
+      .toc .sub {
+        padding-left: 1.2rem;
+        list-style: disc;
+      }
+
+      /* ========== Section ========== */
+      .section {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .section h2 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .section h2 .sec-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        background: #1e3a5f;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+      .section h3 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 1.5rem 0 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .section h4 {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #334155;
+        margin: 1.2rem 0 0.5rem;
+      }
+
+      /* ========== Tables ========== */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.75rem 0 1rem;
+        font-size: 0.85rem;
+      }
+      th,
+      td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border: 1px solid #e2e8f0;
+      }
+      th {
+        background: #f1f5f9;
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.8rem;
+        white-space: nowrap;
+      }
+      tr:nth-child(even) td {
+        background: #fafbfd;
+      }
+
+      /* ========== Code / Diagram ========== */
+      .diagram {
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 1.25rem;
+        border-radius: 8px;
+        font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+        font-size: 0.78rem;
+        line-height: 1.6;
+        overflow-x: auto;
+        margin: 0.75rem 0 1rem;
+        white-space: pre;
+      }
+
+      /* ========== Feature Cards ========== */
+      .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+      .feature-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        transition: border-color 0.2s;
+      }
+      .feature-card:hover {
+        border-color: #93c5fd;
+      }
+      .feature-card .fc-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .feature-card .fc-desc {
+        font-size: 0.82rem;
+        color: #475569;
+        line-height: 1.6;
+      }
+
+      /* ========== Stat Cards ========== */
+      .stat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0;
+      }
+      .stat-card {
+        background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        text-align: center;
+      }
+      .stat-card .num {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0369a1;
+      }
+      .stat-card .label {
+        font-size: 0.75rem;
+        color: #475569;
+        margin-top: 0.15rem;
+      }
+
+      /* ========== Badge ========== */
+      .badge {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 0.15rem 0.5rem;
+        border-radius: 999px;
+        margin-right: 0.3rem;
+        white-space: nowrap;
+      }
+      .badge-blue {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+      .badge-green {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .badge-orange {
+        background: #ffedd5;
+        color: #9a3412;
+      }
+      .badge-purple {
+        background: #f3e8ff;
+        color: #6b21a8;
+      }
+      .badge-cyan {
+        background: #cffafe;
+        color: #155e75;
+      }
+      .badge-gray {
+        background: #f1f5f9;
+        color: #475569;
+      }
+      .badge-red {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      /* ========== Callout ========== */
+      .callout {
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 8px 8px 0;
+        padding: 0.75rem 1rem;
+        margin: 0.75rem 0 1rem;
+        font-size: 0.85rem;
+        color: #1e40af;
+      }
+      .callout-icon {
+        margin-right: 0.4rem;
+      }
+
+      /* ========== Video Placeholder ========== */
+      .video-placeholder {
+        background: #0f172a;
+        border-radius: 10px;
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: #94a3b8;
+        margin: 1rem 0;
+        border: 2px dashed #334155;
+      }
+      .video-placeholder .vp-icon {
+        margin-bottom: 0.5rem;
+      }
+      .video-placeholder .vp-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #e2e8f0;
+        margin-bottom: 0.25rem;
+      }
+      .video-placeholder .vp-url {
+        font-size: 0.78rem;
+        color: #64748b;
+        font-style: italic;
+      }
+
+      /* ========== Brand Icons (Simple Icons via CDN) ========== */
+      .brand-icon {
+        width: 20px;
+        height: 20px;
+        vertical-align: middle;
+        margin-right: 0.3rem;
+      }
+
+      /* ========== List styles ========== */
+      ul.feature-list {
+        padding-left: 1.5rem;
+        margin: 0.5rem 0;
+      }
+      ul.feature-list li {
+        margin-bottom: 0.3rem;
+        font-size: 0.85rem;
+        color: #334155;
+      }
+      ul.feature-list li::marker {
+        color: #3b82f6;
+      }
+
+      /* ========== Architecture Diagram ========== */
+      .arch-diagram { margin: 1rem 0 1.5rem; }
+      .arch-layer {
+        display: flex;
+        justify-content: center;
+        position: relative;
+      }
+      .arch-box {
+        background: #fff;
+        border: 2px solid #cbd5e1;
+        border-radius: 10px;
+        padding: .6rem 1rem;
+        text-align: center;
+        min-width: 140px;
+        position: relative;
+        z-index: 1;
+      }
+      .arch-box .ab-label {
+        font-size: .65rem;
+        font-weight: 600;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+      }
+      .arch-box .ab-name {
+        font-size: .85rem;
+        font-weight: 700;
+        color: #0f172a;
+        margin: .15rem 0;
+      }
+      .arch-box .ab-tech {
+        font-size: .72rem;
+        color: #475569;
+      }
+      .arch-box.iap {
+        background: linear-gradient(135deg, #0f172a, #1e3a5f);
+        color: #fff;
+        border-color: #1e3a5f;
+        width: 100%;
+        max-width: 700px;
+        padding: .75rem 1.5rem;
+      }
+      .arch-box.iap .ab-label { color: #93c5fd; }
+      .arch-box.iap .ab-name { color: #fff; }
+      .arch-box.iap .ab-tech { color: #94a3b8; }
+      .arch-box.cloudrun {
+        border-color: #3b82f6;
+        background: #eff6ff;
+      }
+      .arch-box.db {
+        border-color: #22c55e;
+        background: #f0fdf4;
+        width: 100%;
+        max-width: 400px;
+      }
+      .arch-box.task {
+        border-color: #f59e0b;
+        background: #fffbeb;
+      }
+      .arch-services {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+      .arch-arrow {
+        display: flex;
+        justify-content: center;
+        padding: .4rem 0;
+        color: #94a3b8;
+        font-size: 1.2rem;
+      }
+      .arch-arrow-side {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: .75rem;
+        padding: .3rem 0;
+        color: #94a3b8;
+        font-size: .85rem;
+      }
+      .arch-side-group {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1rem 0;
+        flex-wrap: wrap;
+      }
+      .arch-connector {
+        color: #94a3b8;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+      }
+      @media (max-width: 768px) {
+        .arch-services { flex-direction: column; align-items: center; }
+        .arch-side-group { flex-direction: column; }
+      }
+
+      /* ========== Footer ========== */
+      .footer {
+        text-align: center;
+        padding: 2rem 1rem;
+        font-size: 0.78rem;
+        color: #94a3b8;
+      }
+
+      /* ========== Responsive ========== */
+      @media (max-width: 768px) {
+        .hero h1 {
+          font-size: 1.2rem;
+        }
+        .section {
+          padding: 1.25rem;
+        }
+        .feature-grid {
+          grid-template-columns: 1fr;
+        }
+        .stat-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* ========== Print ========== */
+      @media print {
+        body {
+          background: #fff;
+        }
+        .hero {
+          break-after: page;
+        }
+        .section {
+          break-inside: avoid;
+          box-shadow: none;
+          border: 1px solid #ccc;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===== HERO ===== -->
+    <header class="hero">
+      <div class="hero-inner">
+        <span class="hero-badge">DEVELOPMENT REPORT</span>
+        <h1>
+          Genzai（現場資材管理アプリケーション）における<br />高機能な備品管理・企業管理の実装
+        </h1>
+        <p>
+          備品台帳のデジタル化 —
+          登録・検索・履歴管理・画像管理・添付資料管理・企業管理
+        </p>
+        <div class="hero-meta">
+          <span
+            ><i data-lucide="calendar" style="width: 14px; height: 14px"></i>
+            2026.3.14</span
+          >
+          <span
+            ><i data-lucide="user" style="width: 14px; height: 14px"></i>
+            林翔太/shota_h</span
+          >
+        </div>
+      </div>
+    </header>
+
+    <div class="container" style="margin-top: 2rem">
+      <!-- ===== TOC ===== -->
+      <nav class="toc">
+        <h2>
+          <i data-lucide="list" style="width: 18px; height: 18px"></i> 目次
+        </h2>
+        <ol>
+          <li><a href="#sec1">本資料の目的と概要</a></li>
+          <li><a href="#sec2">デモ動画</a></li>
+          <li><a href="#sec3">実装規模</a></li>
+          <li><a href="#sec4">システムアーキテクチャ</a></li>
+          <li><a href="#sec5">備品管理 — 一覧・検索・CSV出力</a></li>
+          <li><a href="#sec6">備品管理 — 登録・編集・複写</a></li>
+          <li><a href="#sec7">備品管理 — 備品管理番号の自動採番</a></li>
+          <li><a href="#sec8">備品管理 — 状態管理と使用状況連動</a></li>
+          <li>
+            <a href="#sec9">備品管理 — 履歴管理（5種類の統合タイムライン）</a>
+          </li>
+          <li><a href="#sec10">備品管理 — 画像・写真管理</a></li>
+          <li><a href="#sec11">備品管理 — 添付資料管理</a></li>
+          <li><a href="#sec12">企業管理</a></li>
+          <li><a href="#sec13">セキュリティ・認証認可</a></li>
+          <li><a href="#sec14">非機能要件への対応</a></li>
+          <li><a href="#sec15">使用技術・ライブラリ</a></li>
+          <li><a href="#sec16">データベース設計</a></li>
+        </ol>
+      </nav>
+
+      <!-- ===== 1. 本資料の目的と概要 ===== -->
+      <section id="sec1" class="section">
+        <h2><span class="sec-num">1</span> 本資料の目的と概要</h2>
+
+        <h3><i data-lucide="file-text" style="width:18px;height:18px;color:#2563eb"></i> 資料の目的</h3>
+        <p>
+          本資料は、Genzai（現場資材管理アプリケーション）において新たに設計・実装した<strong>備品管理機能</strong>および<strong>企業管理機能</strong>の開発成果を報告するものです。実装した機能の全体像、技術的な設計判断、使用技術を体系的にまとめ、開発の取り組みと成果を共有することを目的としています。
+        </p>
+
+        <h3><i data-lucide="info" style="width:18px;height:18px;color:#2563eb"></i> Genzaiとは</h3>
+        <p>
+          Genzaiは、森松工業の現場で使用する資材（工具・消耗品等）を管理するWebアプリケーションです。現場ごとの正確な数量管理、入出庫管理を行い、消耗品以外については備品として台帳管理することで、資材のライフサイクル全体を可視化します。
+        </p>
+
+        <h3><i data-lucide="target" style="width:18px;height:18px;color:#2563eb"></i> 今回の実装対象</h3>
+        <p>
+          品目管理機能で「台帳管理する」に設定された品目（工具類など現場をまたいで管理する資材）について、実際の備品を<strong>1点ずつ登録し、台帳形式でライフサイクル全体を管理する機能</strong>を設計・実装しました。具体的には以下の2つの機能群です。
+        </p>
+        <div class="feature-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+          <div class="feature-card" style="border-left: 4px solid #2563eb;">
+            <div class="fc-title"><i data-lucide="package" style="width:16px;height:16px;color:#2563eb"></i> 備品管理機能</div>
+            <div class="fc-desc">備品の登録・編集・削除・複写、17項目の検索、5種類の履歴管理（現場使用・移管・メンテナンス・貸出・状態変更）、画像管理（10枚、DnD、カメラ撮影）、添付資料管理（ファイル/URL、各種プレビュー、大容量アップロード）、CSV出力、備品管理番号の自動採番など。</div>
+          </div>
+          <div class="feature-card" style="border-left: 4px solid #16a34a;">
+            <div class="fc-title"><i data-lucide="building-2" style="width:16px;height:16px;color:#16a34a"></i> 企業管理機能</div>
+            <div class="fc-desc">メーカー・購入先・メンテナンス企業の管理。1企業が複数カテゴリを兼務可能な柔軟な設計。連絡先管理、企業名重複チェック、備品詳細画面からの直接操作、カードグリッドUI。</div>
+          </div>
+        </div>
+
+        <p>フロントエンド（Next.js）、バックエンドAPI（Hono）、データベース（PostgreSQL / Prisma）、ストレージ（Supabase Storage）、認証認可（Supabase Auth + IAP）にわたる<strong>フルスタック実装</strong>です。</p>
+      </section>
+
+      <!-- ===== 2. デモ動画 ===== -->
+      <section id="sec2" class="section">
+        <h2><span class="sec-num">2</span> デモ動画</h2>
+
+        <p>まずは実際の動作をご覧ください。各機能の動作をデモ動画で確認いただけます。</p>
+
+        <h3>動画 1: 備品一覧・検索・CSV出力</h3>
+        <div class="video-placeholder">
+          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
+          <div class="vp-title">備品一覧・検索・CSV出力</div>
+          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        </div>
+
+        <h3>動画 2: 備品登録・編集・複写</h3>
+        <div class="video-placeholder">
+          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
+          <div class="vp-title">備品登録・編集・複写</div>
+          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        </div>
+
+        <h3>動画 3: 履歴管理・画像管理・添付資料管理</h3>
+        <div class="video-placeholder">
+          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
+          <div class="vp-title">履歴管理・画像管理・添付資料管理</div>
+          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        </div>
+
+        <h3>動画 4: 企業管理</h3>
+        <div class="video-placeholder">
+          <div class="vp-icon"><i data-lucide="play-circle" style="width:48px;height:48px;color:#3b82f6"></i></div>
+          <div class="vp-title">企業管理</div>
+          <div class="vp-url"><!-- YouTube URL をここに挿入 -->[YouTube URL を挿入]</div>
+        </div>
+      </section>
+
+      <!-- ===== 3. 実装規模 ===== -->
+      <section id="sec3" class="section">
+        <h2><span class="sec-num">3</span> 実装規模</h2>
+
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="num">130+</div>
+            <div class="label">機能要件（ID管理）</div>
+          </div>
+          <div class="stat-card">
+            <div class="num">18</div>
+            <div class="label">非機能要件</div>
+          </div>
+          <div class="stat-card">
+            <div class="num">11</div>
+            <div class="label">DBテーブル</div>
+          </div>
+          <div class="stat-card">
+            <div class="num">30+</div>
+            <div class="label">APIエンドポイント</div>
+          </div>
+          <div class="stat-card">
+            <div class="num">60+</div>
+            <div class="label">UIコンポーネント</div>
+          </div>
+          <div class="stat-card">
+            <div class="num">4</div>
+            <div class="label">ページ（ルート）</div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="target"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          実装した主要機能群
+        </h3>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="package"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              備品台帳管理
+            </div>
+            <div class="fc-desc">
+              備品の登録・編集・削除・複写（単数/N件一括）。品目との紐付け、保管場所管理、状態管理を包括。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="search"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              高度な検索
+            </div>
+            <div class="fc-desc">
+              17項目の検索条件、5セクションに分類された検索ダイアログ、URL共有可能な検索パラメータ。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="history"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              5種類の履歴管理
+            </div>
+            <div class="fc-desc">
+              現場使用・移管・メンテナンス・貸出・状態変更の5履歴を統合タイムラインで表示。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="image"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              画像管理
+            </div>
+            <div class="fc-desc">
+              最大10枚、DnD並替、メイン設定、Swiper表示、カメラ撮影対応。即時保存。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="paperclip"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              添付資料管理
+            </div>
+            <div class="fc-desc">
+              ファイル/URL対応、PDF・動画・音声・OGPプレビュー、大容量TUSアップロード対応。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="building-2"
+                style="width: 16px; height: 16px; color: #2563eb"
+              ></i>
+              企業管理
+            </div>
+            <div class="fc-desc">
+              メーカー・購入先・メンテナンス企業の管理。複数カテゴリ対応、連絡先管理、備品との連携。
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== 3. システムアーキテクチャ ===== -->
+      <section id="sec4" class="section">
+        <h2><span class="sec-num">4</span> システムアーキテクチャ</h2>
+
+        <h3>
+          <i
+            data-lucide="network"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          全体構成
+        </h3>
+
+        <div class="arch-diagram">
+          <!-- IAP Layer -->
+          <div class="arch-layer">
+            <div class="arch-box iap">
+              <div class="ab-label"><i data-lucide="shield-check" style="width:14px;height:14px"></i> Network</div>
+              <div class="ab-name">Cloud Load Balancing + Identity-Aware Proxy (IAP)</div>
+              <div class="ab-tech">Google Cloud によるゼロトラスト認証</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow"><i data-lucide="chevrons-down" style="width:24px;height:24px"></i></div>
+
+          <!-- Cloud Run Services -->
+          <div class="arch-services">
+            <div class="arch-box cloudrun">
+              <div class="ab-label">Cloud Run</div>
+              <div class="ab-name">web</div>
+              <div class="ab-tech"><img class="brand-icon" src="https://cdn.simpleicons.org/nextdotjs" alt=""> Next.js 15<br>App Router</div>
+            </div>
+            <div class="arch-box cloudrun">
+              <div class="ab-label">Cloud Run</div>
+              <div class="ab-name">api</div>
+              <div class="ab-tech"><img class="brand-icon" src="https://cdn.simpleicons.org/hono" alt=""> Hono<br>TypeScript</div>
+            </div>
+            <div class="arch-box cloudrun">
+              <div class="ab-label">Cloud Run</div>
+              <div class="ab-name">go-services</div>
+              <div class="ab-tech"><img class="brand-icon" src="https://cdn.simpleicons.org/go" alt=""> Go / Gin<br>Health 等</div>
+            </div>
+          </div>
+
+          <div class="arch-arrow"><i data-lucide="chevrons-down" style="width:24px;height:24px"></i></div>
+
+          <!-- Supabase -->
+          <div class="arch-layer">
+            <div class="arch-box db">
+              <div class="ab-label"><img class="brand-icon" src="https://cdn.simpleicons.org/supabase" alt=""> Database & Storage</div>
+              <div class="ab-name">Supabase</div>
+              <div class="ab-tech">PostgreSQL + Storage (S3互換) + Authentication + Row Level Security</div>
+            </div>
+          </div>
+
+          <!-- Cloud Tasks -->
+          <div style="margin-top:1.5rem; padding-top:1.25rem; border-top: 2px dashed #e2e8f0;">
+            <div style="text-align:center; font-size:.72rem; color:#94a3b8; margin-bottom:.75rem;">非同期タスク処理</div>
+            <div class="arch-side-group">
+              <div class="arch-box task" style="min-width:160px;">
+                <div class="ab-label">Scheduler</div>
+                <div class="ab-name">Cloud Scheduler</div>
+                <div class="ab-tech">定期実行トリガー</div>
+              </div>
+              <div class="arch-connector"><i data-lucide="arrow-right" style="width:24px;height:24px"></i></div>
+              <div class="arch-box task" style="min-width:160px;">
+                <div class="ab-label"><img class="brand-icon" src="https://cdn.simpleicons.org/googlecloud" alt=""> Queue</div>
+                <div class="ab-name">Cloud Tasks</div>
+                <div class="ab-tech">タスクキュー</div>
+              </div>
+              <div class="arch-connector"><i data-lucide="arrow-right" style="width:24px;height:24px"></i></div>
+              <div class="arch-box cloudrun" style="min-width:180px;">
+                <div class="ab-label">Cloud Run</div>
+                <div class="ab-name">job-notification</div>
+                <div class="ab-tech"><img class="brand-icon" src="https://cdn.simpleicons.org/hono" alt=""> Hono<br>メール・通知処理</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="folder-tree"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          フロントエンド設計
+        </h3>
+        <p>
+          bulletproof-react準拠のレイヤードアーキテクチャ +
+          Container/Presentationalパターンを採用。
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>層</th>
+              <th>責務</th>
+              <th>配置</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Presentation</td>
+              <td>UI表示、イベントハンドラ呼び出し</td>
+              <td>
+                <code>components/</code>, <code>features/*/components/</code>
+              </td>
+            </tr>
+            <tr>
+              <td>Container</td>
+              <td>ロジックと表示の橋渡し、状態管理</td>
+              <td><code>features/*/containers/</code></td>
+            </tr>
+            <tr>
+              <td>Application</td>
+              <td>カスタムフック、ビジネスロジック</td>
+              <td><code>hooks/</code>, <code>features/*/hooks/</code></td>
+            </tr>
+            <tr>
+              <td>Domain</td>
+              <td>エンティティ、型、バリデーション</td>
+              <td><code>@repo/shared</code></td>
+            </tr>
+            <tr>
+              <td>Infrastructure</td>
+              <td>API呼び出し、外部サービス連携</td>
+              <td><code>lib/</code>, <code>features/*/api/</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="server"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          バックエンド設計
+        </h3>
+        <p>
+          クリーンアーキテクチャ準拠の4層構造。依存性逆転の原則に基づき、ドメイン層に依存が集中しない設計。
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>層</th>
+              <th>責務</th>
+              <th>配置</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Presentation</td>
+              <td>HTTPリクエスト/レスポンス、ルーティング</td>
+              <td><code>presentation/routers/</code></td>
+            </tr>
+            <tr>
+              <td>Application</td>
+              <td>ユースケース、ビジネスフロー制御</td>
+              <td><code>application/usecase/</code></td>
+            </tr>
+            <tr>
+              <td>Domain</td>
+              <td>ドメインモデル、ビジネスルール、Repository IF</td>
+              <td><code>domain/</code></td>
+            </tr>
+            <tr>
+              <td>Infrastructure</td>
+              <td>DB アクセス、外部サービス連携</td>
+              <td><code>infrastructure/repository/</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 3. 備品管理 — 一覧・検索・CSV出力 ===== -->
+      <section id="sec5" class="section">
+        <h2><span class="sec-num">5</span> 備品管理 — 一覧・検索・CSV出力</h2>
+
+        <h3>
+          <i
+            data-lucide="table"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          一覧テーブル
+        </h3>
+        <p>
+          TanStack Table
+          を使用したコンパクトな台帳形式の一覧。情報密度の高いレイアウトで備品台帳としての実用性を重視しています。
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>仕様項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>行の高さ</td>
+              <td>40px（コンパクトモード）</td>
+            </tr>
+            <tr>
+              <td>フォントサイズ</td>
+              <td>本文 13px / ヘッダー 12px</td>
+            </tr>
+            <tr>
+              <td>1ページ表示件数</td>
+              <td>30件</td>
+            </tr>
+            <tr>
+              <td>表示幅</td>
+              <td>
+                max-w-[1600px]（通常のcontainerより広く、台帳らしいデザインを優先）
+              </td>
+            </tr>
+            <tr>
+              <td>表示列</td>
+              <td>
+                チェックボックス、画像、管理番号、備品名、品目名、管理工場、状態、使用状況、購入区分、更新日時、アクション
+              </td>
+            </tr>
+            <tr>
+              <td>ソート</td>
+              <td>
+                備品管理番号、備品名、品目名、管理工場、状態、更新日時（6列対応）
+              </td>
+            </tr>
+            <tr>
+              <td>ページネーション</td>
+              <td>URLクエリパラメータ方式（nuqs管理）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>状態バッジ一覧</h4>
+        <p>
+          <span class="badge badge-green">現存</span>
+          <span class="badge badge-orange">故障</span>
+          <span class="badge badge-gray">廃棄</span>
+          <span class="badge badge-blue">保管</span>
+          <span class="badge badge-cyan">使用予定</span>
+          <span class="badge badge-blue">出庫確定</span>
+          <span class="badge badge-orange">出庫済</span>
+          <span class="badge badge-purple">メンテナンス中</span>
+          <span class="badge badge-blue">購入</span>
+          <span class="badge badge-green">リース</span>
+          <span class="badge badge-orange">レンタル</span>
+        </p>
+
+        <h4>アクションメニュー（行ごと）</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>操作</th>
+              <th>動作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>詳細を見る</td>
+              <td><code>/equipments/{id}</code> へ遷移</td>
+            </tr>
+            <tr>
+              <td>編集する</td>
+              <td><code>/equipments/{id}?mode=edit</code> へ遷移</td>
+            </tr>
+            <tr>
+              <td>複写して編集</td>
+              <td><code>/equipments/new?copyFrom={id}</code> へ遷移</td>
+            </tr>
+            <tr>
+              <td>N件複写</td>
+              <td>バッチ複写ダイアログを表示</td>
+            </tr>
+            <tr>
+              <td>削除</td>
+              <td>依存チェック付き削除確認ダイアログを表示</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <i
+            data-lucide="shield"
+            style="width: 14px; height: 14px"
+            class="callout-icon"
+          ></i>
+          作業責任者ロールの場合は「詳細を見る」のみ表示。編集・削除系は権限に基づき非表示。
+        </div>
+
+        <h3>
+          <i
+            data-lucide="search"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          検索機能（17項目、5セクション）
+        </h3>
+        <p>
+          検索条件が多いため、shadcn/ui
+          のDialogにセクション分けで整理した検索フォームを実装しています。
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>セクション</th>
+              <th>検索項目</th>
+              <th>検索方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="5">
+                <i data-lucide="package" style="width: 14px; height: 14px"></i>
+                備品
+              </td>
+              <td>備品管理番号</td>
+              <td>前方一致</td>
+            </tr>
+            <tr>
+              <td>備品名</td>
+              <td>部分一致</td>
+            </tr>
+            <tr>
+              <td>備品の状態</td>
+              <td>完全一致（現存/故障/廃棄）</td>
+            </tr>
+            <tr>
+              <td>使用状況</td>
+              <td>完全一致（5種）</td>
+            </tr>
+            <tr>
+              <td>購入区分</td>
+              <td>完全一致（購入/リース/レンタル）</td>
+            </tr>
+            <tr>
+              <td rowspan="2">
+                <i data-lucide="tag" style="width: 14px; height: 14px"></i> 品目
+              </td>
+              <td>品目名</td>
+              <td>部分一致</td>
+            </tr>
+            <tr>
+              <td>品目カテゴリ</td>
+              <td>トグルバッジ複数選択</td>
+            </tr>
+            <tr>
+              <td rowspan="3">
+                <i data-lucide="map-pin" style="width: 14px; height: 14px"></i>
+                保管場所
+              </td>
+              <td>管理工場</td>
+              <td>完全一致（複数選択可）</td>
+            </tr>
+            <tr>
+              <td>管理部署</td>
+              <td>完全一致</td>
+            </tr>
+            <tr>
+              <td>保管場所</td>
+              <td>完全一致</td>
+            </tr>
+            <tr>
+              <td rowspan="3">
+                <i
+                  data-lucide="building-2"
+                  style="width: 14px; height: 14px"
+                ></i>
+                企業
+              </td>
+              <td>メーカー</td>
+              <td>企業名部分一致</td>
+            </tr>
+            <tr>
+              <td>購入企業</td>
+              <td>企業名部分一致</td>
+            </tr>
+            <tr>
+              <td>メンテナンス企業</td>
+              <td>企業名部分一致</td>
+            </tr>
+            <tr>
+              <td rowspan="2">
+                <i data-lucide="factory" style="width: 14px; height: 14px"></i>
+                現場
+              </td>
+              <td>使用中の現場</td>
+              <td>製作番号の親番号前方一致</td>
+            </tr>
+            <tr>
+              <td>製作番号（過去）</td>
+              <td>親番号前方一致（過去の使用履歴も検索対象）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="link"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              URL検索パラメータ
+            </div>
+            <div class="fc-desc">
+              nuqsで型安全にURL管理。検索状態をURLで共有可能。ブラウザの戻る/進む操作にも対応。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="save"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              検索パラメータ保存
+            </div>
+            <div class="fc-desc">
+              管理工場の選択をユーザー単位で自動保存（UserSearchParams）。次回アクセス時に復元。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="filter"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              アクティブ条件数表示
+            </div>
+            <div class="fc-desc">
+              検索ボタンにバッジでアクティブな検索条件の数を表示。現在何件の条件で絞り込んでいるか一目で把握。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="eraser"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              条件クリア
+            </div>
+            <div class="fc-desc">
+              「条件をすべてクリア」で全検索条件を一括リセット。
+            </div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="file-down"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          CSV出力
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>仕様</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>出力範囲</td>
+              <td>現在の検索条件に一致する全件（ページネーション無視）</td>
+            </tr>
+            <tr>
+              <td>文字コード</td>
+              <td>UTF-8（BOM付き）— Excel で文字化けしない</td>
+            </tr>
+            <tr>
+              <td>ファイル名</td>
+              <td><code>備品一覧_YYYYMMDD_HHmmss.csv</code></td>
+            </tr>
+            <tr>
+              <td>出力項目</td>
+              <td>
+                26項目（管理番号、工場管理番号、備品名、品目名、カテゴリ、シリアル番号、型番、状態、使用状況、購入区分、管理工場、管理部署、保管場所、重量、寸法3項目、メーカー、購入先、メンテ企業、使用中の製作番号、現場名、作成日時、作成者、更新日時、更新者）
+              </td>
+            </tr>
+            <tr>
+              <td>ライブラリ</td>
+              <td>react-papaparse（クライアントサイド生成）</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="smartphone"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          レスポンシブ対応
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>デバイス</th>
+              <th>幅</th>
+              <th>表示</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PC</td>
+              <td>1024px以上</td>
+              <td>フルテーブル（全列表示）</td>
+            </tr>
+            <tr>
+              <td>タブレット</td>
+              <td>768px〜1023px</td>
+              <td>テーブル（一部列省略）</td>
+            </tr>
+            <tr>
+              <td>モバイル</td>
+              <td>767px以下</td>
+              <td>カードリスト表示に自動切替</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 4. 備品管理 — 登録・編集・複写 ===== -->
+      <section id="sec6" class="section">
+        <h2><span class="sec-num">6</span> 備品管理 — 登録・編集・複写</h2>
+
+        <h3>
+          <i
+            data-lucide="plus-circle"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          新規登録
+        </h3>
+        <p>
+          専用ページ形式（<code>/equipments/new</code>）で登録フォームを提供。登録する情報は以下の通り多岐にわたります。
+        </p>
+
+        <h4>基本情報（登録項目）</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>必須</th>
+              <th>仕様</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>備品名</td>
+              <td>必須</td>
+              <td>最大200文字</td>
+            </tr>
+            <tr>
+              <td>品目</td>
+              <td>必須</td>
+              <td>
+                品目検索ダイアログで選択（インクリメンタルサーチ+カテゴリフィルタ）
+              </td>
+            </tr>
+            <tr>
+              <td>備品管理番号</td>
+              <td>自動</td>
+              <td>保管場所選択後に自動採番。プレビュー表示。手動入力も可能</td>
+            </tr>
+            <tr>
+              <td>工場管理番号</td>
+              <td>任意</td>
+              <td>外部台帳の番号（フリーテキスト）。未入力時は警告色で通知</td>
+            </tr>
+            <tr>
+              <td>シリアル番号</td>
+              <td>任意</td>
+              <td>製造シリアル番号（最大100文字）</td>
+            </tr>
+            <tr>
+              <td>型番</td>
+              <td>任意</td>
+              <td>型番・モデル番号（最大100文字）</td>
+            </tr>
+            <tr>
+              <td>保管場所</td>
+              <td>必須</td>
+              <td>管理工場→管理部署→保管場所の3段カスケード選択</td>
+            </tr>
+            <tr>
+              <td>購入区分</td>
+              <td>必須</td>
+              <td>購入 / リース / レンタル</td>
+            </tr>
+            <tr>
+              <td>重量</td>
+              <td>任意</td>
+              <td>数値 + 単位選択（kg/g/t）</td>
+            </tr>
+            <tr>
+              <td>寸法</td>
+              <td>任意</td>
+              <td>幅・奥行・高さの3値 + 単位選択（cm/m/mm）</td>
+            </tr>
+            <tr>
+              <td>メーカー</td>
+              <td>任意</td>
+              <td>企業選択ダイアログで選択</td>
+            </tr>
+            <tr>
+              <td>購入先</td>
+              <td>任意</td>
+              <td>企業選択ダイアログで選択</td>
+            </tr>
+            <tr>
+              <td>メンテナンス企業</td>
+              <td>任意</td>
+              <td>企業選択ダイアログで選択</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>品目検索ダイアログの機能</h4>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="search"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              インクリメンタルサーチ
+            </div>
+            <div class="fc-desc">
+              品目名・検索ヒントでデバウンス検索（300ms、2文字以上）。結果を品目カードで表示。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="tag"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              カテゴリフィルタ
+            </div>
+            <div class="fc-desc">
+              トグルバッジで複数カテゴリ同時選択。表示順管理、折りたたみ対応。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="check-square"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              台帳管理フィルタ
+            </div>
+            <div class="fc-desc">
+              「台帳管理する品目のみ」「備品区分のみ」のチェックボックス。推奨外品目選択時は確認ダイアログ。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="chevrons-down"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              段階読み込み
+            </div>
+            <div class="fc-desc">
+              20件ずつ表示、「もっと見る（残りN件）」で追加ロード。
+            </div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="pencil"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          編集
+        </h3>
+        <ul class="feature-list">
+          <li>
+            閲覧モードと編集モードをURLパラメータ（<code>?mode=edit</code>）で切り替え
+          </li>
+          <li>全ての基本情報・企業情報を編集可能</li>
+          <li>備品管理番号は編集不可（不変）— 変更不可の旨を画面に明示</li>
+          <li>品目の変更は可能（管理番号は変わらない旨の警告を表示）</li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="copy"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          複写機能
+        </h3>
+        <h4>複写して編集（単数登録）</h4>
+        <ul class="feature-list">
+          <li>既存備品のデータをプリセットした新規登録フォームへ遷移</li>
+          <li>
+            コピー対象:
+            品目、備品名（「(コピー)」付与）、企業情報、重量、寸法、工場管理番号
+          </li>
+          <li>
+            コピー除外:
+            管理番号（新規採番）、全履歴、画像、添付資料、シリアル番号
+          </li>
+        </ul>
+        <h4>N件複写（一括登録）</h4>
+        <ul class="feature-list">
+          <li>1〜10件を指定して一括登録</li>
+          <li>備品名は「{元の名前}-1」〜「{元の名前}-N」に自動命名</li>
+          <li>管理番号はそれぞれ自動採番</li>
+          <li>プレビューで作成される備品名と管理番号を事前確認</li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="trash-2"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          削除
+        </h3>
+        <ul class="feature-list">
+          <li>
+            常に論理削除（<code>deletedAt</code> をセット）。物理削除は不可
+          </li>
+          <li>削除前に依存チェックを自動実行</li>
+          <li>削除不可の条件: シートで割り当て中 / 貸出中</li>
+          <li>
+            依存チェック結果を削除確認ダイアログに表示（削除不可の理由と件数）
+          </li>
+          <li>「削除済みを表示」切替UIで論理削除済み備品の確認が可能</li>
+        </ul>
+      </section>
+
+      <!-- ===== 5. 備品管理番号 ===== -->
+      <section id="sec7" class="section">
+        <h2>
+          <span class="sec-num">7</span> 備品管理 — 備品管理番号の自動採番
+        </h2>
+
+        <p>
+          備品管理番号はアプリ専用の識別番号であり、登録時の管理工場・管理部署・品目カテゴリに基づいて<strong>自動採番</strong>されます。
+        </p>
+
+        <h3>
+          <i
+            data-lucide="hash"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          採番ルール
+        </h3>
+        <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:1.25rem 1.5rem;margin:.75rem 0 1rem;">
+          <div style="font-size:.78rem;color:#64748b;font-weight:600;margin-bottom:.5rem;">形式</div>
+          <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin-bottom:1rem;">
+            <div style="background:#1e40af;color:#fff;padding:.35rem .7rem;border-radius:6px 0 0 6px;font-family:monospace;font-size:1rem;font-weight:700;">F50</div>
+            <div style="background:#e2e8f0;color:#64748b;padding:.35rem .15rem;font-size:1rem;">-</div>
+            <div style="background:#7c3aed;color:#fff;padding:.35rem .7rem;font-family:monospace;font-size:1rem;font-weight:700;">D01</div>
+            <div style="background:#e2e8f0;color:#64748b;padding:.35rem .15rem;font-size:1rem;">-</div>
+            <div style="background:#0891b2;color:#fff;padding:.35rem .7rem;font-family:monospace;font-size:1rem;font-weight:700;">C001</div>
+            <div style="background:#e2e8f0;color:#64748b;padding:.35rem .15rem;font-size:1rem;">-</div>
+            <div style="background:#15803d;color:#fff;padding:.35rem .7rem;border-radius:0 6px 6px 0;font-family:monospace;font-size:1rem;font-weight:700;">00001</div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.5rem;">
+            <div style="text-align:center;">
+              <div style="width:8px;height:8px;background:#1e40af;border-radius:50%;margin:0 auto .25rem;"></div>
+              <div style="font-size:.72rem;font-weight:700;color:#1e40af;">F50</div>
+              <div style="font-size:.7rem;color:#475569;">工場番号<br><span style="color:#94a3b8;">（管理工場）</span></div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:8px;height:8px;background:#7c3aed;border-radius:50%;margin:0 auto .25rem;"></div>
+              <div style="font-size:.72rem;font-weight:700;color:#7c3aed;">D01</div>
+              <div style="font-size:.7rem;color:#475569;">部署連番 2桁<br><span style="color:#94a3b8;">（管理部署）</span></div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:8px;height:8px;background:#0891b2;border-radius:50%;margin:0 auto .25rem;"></div>
+              <div style="font-size:.72rem;font-weight:700;color:#0891b2;">C001</div>
+              <div style="font-size:.7rem;color:#475569;">カテゴリ連番 3桁<br><span style="color:#94a3b8;">（品目カテゴリ）</span></div>
+            </div>
+            <div style="text-align:center;">
+              <div style="width:8px;height:8px;background:#15803d;border-radius:50%;margin:0 auto .25rem;"></div>
+              <div style="font-size:.72rem;font-weight:700;color:#15803d;">00001</div>
+              <div style="font-size:.7rem;color:#475569;">備品連番 5桁<br><span style="color:#94a3b8;">（通し番号）</span></div>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:.75rem;font-size:.78rem;color:#475569;background:#fff;border-radius:6px;padding:.4rem .75rem;border:1px solid #e2e8f0;">
+            例: <span style="font-family:monospace;font-weight:600;color:#0f172a;">F50-D01-C001-00001</span> = 本社工場 - 本社工場PT課 - 電動工具 - 連番1
+          </div>
+        </div>
+
+        <h4>採番の特性</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>特性</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>一意性保証</td>
+              <td>
+                トランザクション内で排他ロック（<code>FOR UPDATE</code
+                >）を取得して採番
+              </td>
+            </tr>
+            <tr>
+              <td>不変</td>
+              <td>移管で保管場所が変わっても番号は変更しない</td>
+            </tr>
+            <tr>
+              <td>欠番</td>
+              <td>削除された備品の番号は再利用しない</td>
+            </tr>
+            <tr>
+              <td>プレビュー</td>
+              <td>
+                登録時に管理工場・管理部署・品目を選択した時点でリアルタイムプレビュー
+              </td>
+            </tr>
+            <tr>
+              <td>手動入力</td>
+              <td>
+                連番部分をクリックでインライン編集可能（重複チェック付き）
+              </td>
+            </tr>
+            <tr>
+              <td>ラベル表示</td>
+              <td>
+                各セグメント（工場名・部署名・カテゴリ名・連番）を管理番号の下にラベル表示
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <i
+            data-lucide="info"
+            style="width: 14px; height: 14px"
+            class="callout-icon"
+          ></i>
+          プレビュー用APIと本採番用APIを分離。プレビューはロックなしで軽量に、本採番はトランザクション内で排他ロックを取得して一意性を保証しています。
+        </div>
+      </section>
+
+      <!-- ===== 6. 状態管理 ===== -->
+      <section id="sec8" class="section">
+        <h2>
+          <span class="sec-num">8</span> 備品管理 — 状態管理と使用状況連動
+        </h2>
+
+        <h3>
+          <i
+            data-lucide="alert-circle"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          備品の状態
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>状態</th>
+              <th>バッジ</th>
+              <th>説明</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>現存</td>
+              <td><span class="badge badge-green">現存</span></td>
+              <td>通常使用可能な状態</td>
+            </tr>
+            <tr>
+              <td>故障</td>
+              <td><span class="badge badge-orange">故障</span></td>
+              <td>修理が必要な状態</td>
+            </tr>
+            <tr>
+              <td>廃棄</td>
+              <td><span class="badge badge-gray">廃棄</span></td>
+              <td>使用不可、廃棄済み</td>
+            </tr>
+          </tbody>
+        </table>
+        <ul class="feature-list">
+          <li>状態変更時に「履歴追加」または「上書き保存」を選択可能</li>
+          <li>履歴として日付・事由を保存</li>
+          <li>履歴は論理削除可能。「削除済みを表示」切替UIを提供</li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="activity"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          現在の使用状況（シート連動）
+        </h3>
+        <p>
+          使用状況は現場資材管理シートでの割り当て状態に<strong>自動連動</strong>して更新されます。台帳からは直接変更できません。
+        </p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>シート上の状態</th>
+              <th>備品ステータス</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>必要数として計上（選択中）</td>
+              <td><span class="badge badge-cyan">使用予定</span></td>
+            </tr>
+            <tr>
+              <td>出庫数確定</td>
+              <td><span class="badge badge-blue">出庫確定</span></td>
+            </tr>
+            <tr>
+              <td>出庫済</td>
+              <td><span class="badge badge-orange">出庫済</span></td>
+            </tr>
+            <tr>
+              <td>上記以外</td>
+              <td><span class="badge badge-blue">保管</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          出庫中の場合、使用中の製作番号・現場名・製品名・出庫日・返却予定日をサイドバーに表示します。
+        </p>
+      </section>
+
+      <!-- ===== 7. 履歴管理 ===== -->
+      <section id="sec9" class="section">
+        <h2>
+          <span class="sec-num">9</span> 備品管理 —
+          履歴管理（5種類の統合タイムライン）
+        </h2>
+
+        <p>
+          備品のライフサイクルに関わる<strong>5種類の履歴</strong>を統合タイムラインとして時系列で表示します。種別フィルタにより特定の履歴だけを絞り込むことも可能です。
+        </p>
+
+        <div class="stat-grid">
+          <div
+            class="stat-card"
+            style="
+              background: linear-gradient(135deg, #eff6ff, #dbeafe);
+              border-color: #93c5fd;
+            "
+          >
+            <div class="num" style="color: #1d4ed8; font-size: 1.1rem">
+              <i data-lucide="factory" style="width: 20px; height: 20px"></i>
+            </div>
+            <div class="label">現場使用履歴</div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: linear-gradient(135deg, #faf5ff, #f3e8ff);
+              border-color: #c4b5fd;
+            "
+          >
+            <div class="num" style="color: #7c3aed; font-size: 1.1rem">
+              <i
+                data-lucide="arrow-right-left"
+                style="width: 20px; height: 20px"
+              ></i>
+            </div>
+            <div class="label">移管履歴</div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: linear-gradient(135deg, #fff7ed, #ffedd5);
+              border-color: #fdba74;
+            "
+          >
+            <div class="num" style="color: #c2410c; font-size: 1.1rem">
+              <i data-lucide="wrench" style="width: 20px; height: 20px"></i>
+            </div>
+            <div class="label">メンテナンス履歴</div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: linear-gradient(135deg, #ecfeff, #cffafe);
+              border-color: #67e8f9;
+            "
+          >
+            <div class="num" style="color: #0e7490; font-size: 1.1rem">
+              <i
+                data-lucide="hand-helping"
+                style="width: 20px; height: 20px"
+              ></i>
+            </div>
+            <div class="label">貸出履歴</div>
+          </div>
+          <div
+            class="stat-card"
+            style="
+              background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+              border-color: #86efac;
+            "
+          >
+            <div class="num" style="color: #15803d; font-size: 1.1rem">
+              <i
+                data-lucide="alert-circle"
+                style="width: 20px; height: 20px"
+              ></i>
+            </div>
+            <div class="label">状態変更履歴</div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="factory"
+            style="width: 18px; height: 18px; color: #1d4ed8"
+          ></i>
+          現場使用履歴
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>作成タイミング</td>
+              <td>
+                シートで割り当てられた状態でシートが「出庫済」になった時に<strong
+                  >自動作成</strong
+                >
+              </td>
+            </tr>
+            <tr>
+              <td>重複制御</td>
+              <td>
+                同一製作番号・出庫日のレコードがない場合は新規追加、ある場合は更新
+              </td>
+            </tr>
+            <tr>
+              <td>記録項目</td>
+              <td>
+                製作番号、現場名、製品名、出庫日、返却予定日、返却日、返却理由、最終ステータス
+              </td>
+            </tr>
+            <tr>
+              <td>ステータス更新</td>
+              <td>シートの状態変更に連動して自動的に更新</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="arrow-right-left"
+            style="width: 18px; height: 18px; color: #7c3aed"
+          ></i>
+          移管履歴
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>機能</td>
+              <td>
+                備品を他の所管に移す。管理工場→管理部署→保管場所のカスケード選択
+              </td>
+            </tr>
+            <tr>
+              <td>保存方式</td>
+              <td>上書き保存 or 履歴追加を選択可能</td>
+            </tr>
+            <tr>
+              <td>記録項目</td>
+              <td>日付、移管先（保管場所・管理部署・管理工場）、事由</td>
+            </tr>
+            <tr>
+              <td>スナップショット</td>
+              <td>
+                移管元・移管先の名称をスナップショットとして保持（FK +
+                名称の両方）
+              </td>
+            </tr>
+            <tr>
+              <td>管理番号</td>
+              <td>
+                移管で保管場所が変わっても管理番号は変更しない（不変の原則）
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="wrench"
+            style="width: 18px; height: 18px; color: #c2410c"
+          ></i>
+          メンテナンス履歴
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>記録項目</td>
+              <td>実施日、内容、備考、費用、作業者、依頼先</td>
+            </tr>
+            <tr>
+              <td>保存方式</td>
+              <td>上書き保存 or 履歴追加を選択可能</td>
+            </tr>
+            <tr>
+              <td>企業連携</td>
+              <td>
+                メンテナンス企業として登録された企業名と連絡先の担当者名を自動でセット可能
+              </td>
+            </tr>
+            <tr>
+              <td>論理削除</td>
+              <td>履歴は論理削除可能。「削除済みを表示」切替UIを提供</td>
+            </tr>
+            <tr>
+              <td>手動入力</td>
+              <td>自動セット後にクリアして手動入力することも可能</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="hand-helping"
+            style="width: 18px; height: 18px; color: #0e7490"
+          ></i>
+          貸出履歴
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>記録項目</td>
+              <td>
+                貸出日、返却日、貸出先（管理工場・管理部署・保管場所）、事由
+              </td>
+            </tr>
+            <tr>
+              <td>保存方式</td>
+              <td>上書き保存 or 履歴追加を選択可能</td>
+            </tr>
+            <tr>
+              <td>スナップショット</td>
+              <td>FKとスナップショット名称の両方を保持</td>
+            </tr>
+            <tr>
+              <td>貸出中表示</td>
+              <td>
+                最新の履歴の返却日がない場合「貸出中」と表示し、貸出先の管理部署名も表示
+              </td>
+            </tr>
+            <tr>
+              <td>返却操作</td>
+              <td>貸出カード内の「返却」ボタンから返却日を入力して返却処理</td>
+            </tr>
+            <tr>
+              <td>削除制約</td>
+              <td>貸出中の備品は論理削除不可</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="alert-circle"
+            style="width: 18px; height: 18px; color: #15803d"
+          ></i>
+          状態変更履歴
+        </h3>
+        <ul class="feature-list">
+          <li>変更後の状態、変更日付、事由を記録</li>
+          <li>「履歴追加」または「上書き保存」を選択可能</li>
+          <li>論理削除可能（「削除済みを表示」切替UIを提供）</li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="layout-list"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          統合タイムラインUI
+        </h3>
+        <ul class="feature-list">
+          <li>5種類の履歴を日付降順で統合表示</li>
+          <li>種別ごとに異なるアイコン・色で視覚的に識別</li>
+          <li>
+            種別フィルタ（すべて / 現場使用 / 移管 / メンテナンス / 貸出 /
+            状態変更）
+          </li>
+          <li>各履歴カードから直接編集・削除操作</li>
+          <li>「もっと見る」で段階的に表示</li>
+          <li>
+            操作アクション: メンテナンス履歴追加、貸出履歴追加、状態変更、移管
+          </li>
+        </ul>
+      </section>
+
+      <!-- ===== 8. 画像管理 ===== -->
+      <section id="sec10" class="section">
+        <h2><span class="sec-num">10</span> 備品管理 — 画像・写真管理</h2>
+
+        <p>
+          備品1点につき最大10枚の画像を管理。基本情報の保存とは独立した<strong>即時保存方式</strong>を採用しています。
+        </p>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="upload"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              アップロード
+            </div>
+            <div class="fc-desc">
+              ドラッグ&ドロップ / ファイル選択 /
+              カメラ撮影の3つの入力方式に対応。JPEG/PNG/WebP、1枚10MBまで。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="star"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              メイン画像設定
+            </div>
+            <div class="fc-desc">
+              任意の画像をメイン画像として設定可能。一覧テーブルのサムネイルに使用。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="grip-vertical"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              DnD並び替え
+            </div>
+            <div class="fc-desc">
+              @dnd-kit
+              による直感的なドラッグ&ドロップ並び替え。表示順を即座に保存。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="maximize"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              Swiper表示
+            </div>
+            <div class="fc-desc">
+              Swiper.jsによるスライドショー形式の閲覧。サムネイル行、キーボード操作対応。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="camera"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              カメラ撮影
+            </div>
+            <div class="fc-desc">
+              MediaDevices
+              API（getUserMedia）でPC/iPad/iPhoneすべてでカメラ撮影に対応。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="lock"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              Signed URL
+            </div>
+            <div class="fc-desc">
+              Supabase StorageのSigned
+              URLで画像配信。一覧表示時は一括生成で最適化。
+            </div>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>仕様</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>最大枚数</td>
+              <td>10枚</td>
+            </tr>
+            <tr>
+              <td>対応形式</td>
+              <td>JPEG / PNG / WebP</td>
+            </tr>
+            <tr>
+              <td>最大サイズ</td>
+              <td>10MB / 枚</td>
+            </tr>
+            <tr>
+              <td>保存先</td>
+              <td>
+                Supabase
+                Storage（<code>equipments/{equipmentId}/images/{imageId}.{ext}</code>）
+              </td>
+            </tr>
+            <tr>
+              <td>RLSポリシー</td>
+              <td>
+                SELECT=認証済みユーザー、INSERT/UPDATE/DELETE=作業責任者以外
+              </td>
+            </tr>
+            <tr>
+              <td>保存タイミング</td>
+              <td>即時保存（基本情報と独立）</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 9. 添付資料管理 ===== -->
+      <section id="sec11" class="section">
+        <h2><span class="sec-num">11</span> 備品管理 — 添付資料管理</h2>
+
+        <p>
+          取扱説明書、保証書、動画マニュアル、メーカーWebサイトなど、備品に関連するあらゆる資料をファイル/URLの両方の形式で管理します。
+        </p>
+
+        <h3>
+          <i
+            data-lucide="file-text"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          対応する資料タイプ
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>種別</th>
+              <th>タイプ</th>
+              <th>プレビュー/機能</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td rowspan="5">ファイル</td>
+              <td>画像（JPEG/PNG/WebP/GIF）</td>
+              <td>インラインプレビュー + ダウンロード</td>
+            </tr>
+            <tr>
+              <td>動画（MP4/WebM）</td>
+              <td>react-playerによるインライン再生</td>
+            </tr>
+            <tr>
+              <td>音声（MP3/WAV/OGG）</td>
+              <td>wavesurfer.jsによるWaveform表示 + 再生</td>
+            </tr>
+            <tr>
+              <td>PDF</td>
+              <td>@react-pdf-viewerによるインライン表示</td>
+            </tr>
+            <tr>
+              <td>Office系/CSV/テキスト</td>
+              <td>アイコン表示 + ダウンロード</td>
+            </tr>
+            <tr>
+              <td rowspan="2">URL</td>
+              <td>Webサイト</td>
+              <td>
+                OGP自動取得（cheerio）でサムネイル・タイトル・説明文を表示
+              </td>
+            </tr>
+            <tr>
+              <td>YouTube</td>
+              <td>YouTube Data API v3でサムネイル取得 + react-playerで再生</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="hard-drive"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          アップロード機能
+        </h3>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="upload-cloud"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              通常アップロード
+            </div>
+            <div class="fc-desc">
+              20MB以下のファイルは通常のHTTPアップロード。react-dropzoneでD&D対応。5秒以内の完了を目標。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="refresh-cw"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              TUS Resumable Upload
+            </div>
+            <div class="fc-desc">
+              20MB超の大容量ファイルはtus-js-clientによるリジューマブルアップロード。中断時に再開可能。プログレスバーで進捗表示。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="image"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              サムネイル自動生成
+            </div>
+            <div class="fc-desc">
+              バックエンドでsharpを使用して画像サムネイルを自動生成。一覧表示の軽量化。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="globe"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              OGP取得
+            </div>
+            <div class="fc-desc">
+              URL登録時にcheerioでOGP情報（タイトル、説明、画像）を自動取得。
+            </div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="layout-grid"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          資料管理UI
+        </h3>
+        <ul class="feature-list">
+          <li>2カラム構成: 左に一覧パネル、右に詳細パネル（プレビュー表示）</li>
+          <li>DnD並び替え対応（@dnd-kit）。並び順は即時保存</li>
+          <li>閲覧モードの一覧行ホバー時に説明をTooltipで表示</li>
+          <li>操作ボタン: ダウンロード、上移動、下移動、削除、外部リンク</li>
+          <li>
+            エラーメッセージは日本語で統一（400: ファイル不正、409:
+            上限到達のステータス別分岐）
+          </li>
+          <li>
+            品目管理と備品管理で<strong>共通コンポーネントを再利用</strong>（API層のみ差替え）
+          </li>
+        </ul>
+
+        <table>
+          <thead>
+            <tr>
+              <th>仕様</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>最大件数</td>
+              <td>20件</td>
+            </tr>
+            <tr>
+              <td>保存先</td>
+              <td>
+                Supabase
+                Storage（<code>equipments/{equipmentId}/attachments/{attachmentId}.{ext}</code>）
+              </td>
+            </tr>
+            <tr>
+              <td>保存タイミング</td>
+              <td>即時保存（基本情報と独立）</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 10. 企業管理 ===== -->
+      <section id="sec12" class="section">
+        <h2><span class="sec-num">12</span> 企業管理</h2>
+
+        <p>
+          備品に関連する<strong>メーカー、購入先、メンテナンス企業</strong>を管理する独立した機能です。1企業が複数のカテゴリを兼ねることが可能な柔軟な設計。
+        </p>
+
+        <h3>
+          <i
+            data-lucide="building-2"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          企業登録
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>必須</th>
+              <th>仕様</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>企業名</td>
+              <td>必須</td>
+              <td>
+                最大200文字。重複チェック付き（完全一致で警告、登録はブロックしない）
+              </td>
+            </tr>
+            <tr>
+              <td>カテゴリ</td>
+              <td>必須</td>
+              <td>
+                メーカー/購入先/メンテナンス企業から複数選択可能。1つ以上必須
+              </td>
+            </tr>
+            <tr>
+              <td>備考</td>
+              <td>任意</td>
+              <td>最大500文字</td>
+            </tr>
+            <tr>
+              <td>連絡先</td>
+              <td>任意</td>
+              <td>複数登録可能。代表連絡先を1つ設定</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>連絡先管理</h4>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>仕様</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>担当者名</td>
+              <td>最大100文字</td>
+            </tr>
+            <tr>
+              <td>メールアドレス</td>
+              <td>メールアドレス形式バリデーション</td>
+            </tr>
+            <tr>
+              <td>電話番号</td>
+              <td>最大20文字</td>
+            </tr>
+            <tr>
+              <td>代表フラグ</td>
+              <td>
+                代表連絡先を1つ設定。一覧カードや備品詳細で代表者情報を表示
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="layout-grid"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          企業ページ（一覧・検索）
+        </h3>
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="grid-3x3"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              カードグリッド表示
+            </div>
+            <div class="fc-desc">
+              PC 3列、タブレット 2列、モバイル
+              1列のレスポンシブグリッド。企業情報をカード形式で一覧。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="search"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              インライン検索
+            </div>
+            <div class="fc-desc">
+              企業名（部分一致）、カテゴリ（トグルボタン複数選択）、担当者名（部分一致）。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="link"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              URL連動ダイアログ
+            </div>
+            <div class="fc-desc">
+              新規登録・編集・複写のダイアログ表示状態をnuqsでURL管理。直接URLアクセスで該当ダイアログを表示。
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="fc-title">
+              <i
+                data-lucide="alert-triangle"
+                style="width: 14px; height: 14px; color: #2563eb"
+              ></i>
+              企業名重複チェック
+            </div>
+            <div class="fc-desc">
+              フォーカスアウト時にAPI呼び出しで完全一致チェック。同名企業の散乱を防止。
+            </div>
+          </div>
+        </div>
+
+        <h3>
+          <i
+            data-lucide="link-2"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          備品詳細画面との連携
+        </h3>
+        <ul class="feature-list">
+          <li>
+            備品詳細画面で企業情報（メーカー・購入先・メンテ企業）をインライン表示
+          </li>
+          <li>代表連絡先の担当者名・電話番号・メールアドレスを表示</li>
+          <li>備品詳細画面から直接、企業の選択・変更・解除が可能</li>
+          <li>
+            企業が未登録の場合、「企業を選択して登録」ダイアログと「企業ページで新規登録」への導線を提供
+          </li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="copy"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          複写・削除
+        </h3>
+        <ul class="feature-list">
+          <li>
+            複写して作成:
+            企業名（「(コピー)」付与）、カテゴリ、備考、連絡先をコピー
+          </li>
+          <li>
+            N件複写: 1〜10件指定、企業名は「{名前}-1」〜「{名前}-N」に自動命名
+          </li>
+          <li>
+            論理削除:
+            備品から参照されている場合は削除不可（依存チェック結果を表示）
+          </li>
+          <li>「削除済みを表示」切替UIを提供</li>
+        </ul>
+      </section>
+
+      <!-- ===== 11. セキュリティ ===== -->
+      <section id="sec13" class="section">
+        <h2><span class="sec-num">13</span> セキュリティ・認証認可</h2>
+
+        <h3>
+          <i
+            data-lucide="shield-check"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          認証
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>内容</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>認証基盤</td>
+              <td>Supabase Authentication</td>
+            </tr>
+            <tr>
+              <td>ネットワーク認証</td>
+              <td>
+                Google Cloud Identity-Aware Proxy (IAP) によるゼロトラスト認証
+              </td>
+            </tr>
+            <tr>
+              <td>対象サービス</td>
+              <td>web、api、go-services、job-notification すべてIAP配下</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="users"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          認可（ロールベースアクセス制御）
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ロール</th>
+              <th>閲覧</th>
+              <th>登録・編集・削除</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>システム管理者</td>
+              <td>可</td>
+              <td>可</td>
+            </tr>
+            <tr>
+              <td>生産管理担当者</td>
+              <td>可</td>
+              <td>可</td>
+            </tr>
+            <tr>
+              <td>工長</td>
+              <td>可</td>
+              <td>可</td>
+            </tr>
+            <tr>
+              <td>副工長</td>
+              <td>可</td>
+              <td>可</td>
+            </tr>
+            <tr>
+              <td>資材準備者</td>
+              <td>可</td>
+              <td>可</td>
+            </tr>
+            <tr>
+              <td>作業責任者</td>
+              <td>可</td>
+              <td><strong>不可（閲覧のみ）</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="database"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          Storage RLS ポリシー
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>操作</th>
+              <th>ポリシー</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SELECT（閲覧）</td>
+              <td>認証済みユーザー全員</td>
+            </tr>
+            <tr>
+              <td>INSERT / UPDATE / DELETE</td>
+              <td>作業責任者以外のロール</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 12. 非機能要件 ===== -->
+      <section id="sec14" class="section">
+        <h2><span class="sec-num">14</span> 非機能要件への対応</h2>
+
+        <h3>
+          <i
+            data-lucide="zap"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          パフォーマンス最適化
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>項目</th>
+              <th>対応</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>初回レンダリング</td>
+              <td>
+                Server Componentでデータ取得 → TanStack Query
+                initialDataに設定（SSR最適化）
+              </td>
+            </tr>
+            <tr>
+              <td>備品一覧クエリ</td>
+              <td>
+                必要な列のみSELECT、JOINの最適化、カウントクエリ分離。N+1問題を回避
+              </td>
+            </tr>
+            <tr>
+              <td>画像配信</td>
+              <td>Signed URLの一括生成（一覧表示時）。1時間有効</td>
+            </tr>
+            <tr>
+              <td>検索レスポンス</td>
+              <td>1秒以内（通常データ量）。適切なインデックス設計</td>
+            </tr>
+            <tr>
+              <td>アップロード</td>
+              <td>
+                10MB以下: 5秒以内 / 20MB超: TUS resumable + プログレスバー
+              </td>
+            </tr>
+            <tr>
+              <td>管理番号採番</td>
+              <td>
+                トランザクション内で排他ロック（FOR UPDATE）による一意性保証
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="monitor-smartphone"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          マルチデバイス対応
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>デバイス</th>
+              <th>対応</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>PC（1024px以上）</td>
+              <td>フルレイアウト表示</td>
+            </tr>
+            <tr>
+              <td>タブレット（768px〜1023px）</td>
+              <td>レスポンシブ対応（2カラム→省略表示）</td>
+            </tr>
+            <tr>
+              <td>モバイル（767px以下）</td>
+              <td>カードリスト、アコーディオンサイドバー</td>
+            </tr>
+            <tr>
+              <td>カメラ撮影</td>
+              <td>PC / iPad / iPhone すべてで動作</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="accessibility"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          アクセシビリティ
+        </h3>
+        <ul class="feature-list">
+          <li>コントラスト比 4.5:1 以上（テキスト）</li>
+          <li>WAI-ARIA準拠</li>
+          <li>フルキーボードナビゲーション対応</li>
+          <li>
+            デジタル庁デザインシステム（DADS）に準拠した色・コンポーネント設計
+          </li>
+        </ul>
+
+        <h3>
+          <i
+            data-lucide="shield"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          データ整合性
+        </h3>
+        <ul class="feature-list">
+          <li>備品削除時の依存チェック（シート割当、貸出中）</li>
+          <li>企業削除時の依存チェック（備品からの参照）</li>
+          <li>備品管理番号の一意性保証（トランザクション内採番）</li>
+          <li>StorageファイルとDBレコードの整合性維持</li>
+          <li>台帳管理する/しないの切り替え時のシートとの整合性維持</li>
+        </ul>
+      </section>
+
+      <!-- ===== 13. 使用技術 ===== -->
+      <section id="sec15" class="section">
+        <h2><span class="sec-num">15</span> 使用技術・ライブラリ</h2>
+
+        <h3>
+          <i
+            data-lucide="cpu"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          コア技術スタック
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>カテゴリ</th>
+              <th>技術</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>フロントエンド</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/nextdotjs"
+                  alt=""
+                />Next.js 15 (App Router)
+              </td>
+              <td>React Server Components、型安全なルーティング</td>
+            </tr>
+            <tr>
+              <td>バックエンド (API)</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/hono"
+                  alt=""
+                />Hono
+              </td>
+              <td>軽量・高速 TypeScript API フレームワーク</td>
+            </tr>
+            <tr>
+              <td>バックエンド (Go)</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/go"
+                  alt=""
+                />Go 1.23 + Gin
+              </td>
+              <td>ヘルスチェック等の軽量処理</td>
+            </tr>
+            <tr>
+              <td>データベース</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/supabase"
+                  alt=""
+                />Supabase (PostgreSQL)
+              </td>
+              <td>RLS、リアルタイム、Storage、Authentication</td>
+            </tr>
+            <tr>
+              <td>ORM</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/prisma"
+                  alt=""
+                />Prisma
+              </td>
+              <td>型安全なクエリ、マイグレーション管理</td>
+            </tr>
+            <tr>
+              <td>モノレポ</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/turborepo"
+                  alt=""
+                />Turborepo + pnpm
+              </td>
+              <td>ビルドキャッシュ、依存関係管理</td>
+            </tr>
+            <tr>
+              <td>CSS</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/tailwindcss"
+                  alt=""
+                />Tailwind CSS v4
+              </td>
+              <td>ユーティリティファースト CSS</td>
+            </tr>
+            <tr>
+              <td>デザインシステム</td>
+              <td>デジタル庁 DADS + shadcn/ui</td>
+              <td>アクセシビリティ、一貫性のある UI</td>
+            </tr>
+            <tr>
+              <td>テスト</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/vitest"
+                  alt=""
+                />Vitest /
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/playwright"
+                  alt=""
+                />Playwright
+              </td>
+              <td>単体テスト / E2E テスト</td>
+            </tr>
+            <tr>
+              <td>CI/CD</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/githubactions"
+                  alt=""
+                />GitHub Actions
+              </td>
+              <td>自動ビルド、テスト、デプロイ</td>
+            </tr>
+            <tr>
+              <td>インフラ</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/googlecloud"
+                  alt=""
+                />Google Cloud (Cloud Run)
+              </td>
+              <td>サーバーレス、自動スケーリング</td>
+            </tr>
+            <tr>
+              <td>バリデーション</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/zod"
+                  alt=""
+                />Zod
+              </td>
+              <td>スキーマベースのバリデーション（FE/BE共通）</td>
+            </tr>
+            <tr>
+              <td>認証</td>
+              <td>
+                <img
+                  class="brand-icon"
+                  src="https://cdn.simpleicons.org/supabase"
+                  alt=""
+                />Supabase Auth + IAP
+              </td>
+              <td>認証基盤 + ゼロトラストネットワーク認証</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="puzzle"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          備品管理・企業管理で使用したライブラリ
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ライブラリ</th>
+              <th>使用箇所</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>@tanstack/react-table</strong></td>
+              <td>備品一覧テーブル（ソート、ページネーション、列定義）</td>
+            </tr>
+            <tr>
+              <td><strong>@tanstack/react-query</strong></td>
+              <td>
+                サーバーデータのキャッシュ管理、Optimistic Update、SSR
+                initialData
+              </td>
+            </tr>
+            <tr>
+              <td><strong>nuqs</strong></td>
+              <td>
+                URL検索パラメータの型安全な管理。検索条件、タブ、モード、ダイアログ状態
+              </td>
+            </tr>
+            <tr>
+              <td><strong>react-hook-form + @hookform/resolvers</strong></td>
+              <td>フォーム管理、Zodスキーマ連携バリデーション</td>
+            </tr>
+            <tr>
+              <td><strong>swiper</strong></td>
+              <td>
+                画像スライドショー表示（一覧のサムネイルクリック、詳細画面のギャラリー）
+              </td>
+            </tr>
+            <tr>
+              <td><strong>@dnd-kit/core + @dnd-kit/sortable</strong></td>
+              <td>画像・添付資料のドラッグ&ドロップ並び替え</td>
+            </tr>
+            <tr>
+              <td><strong>react-dropzone</strong></td>
+              <td>ファイルアップロード（ドラッグ&ドロップ対応）</td>
+            </tr>
+            <tr>
+              <td><strong>tus-js-client</strong></td>
+              <td>20MB超の大容量ファイルのリジューマブルアップロード</td>
+            </tr>
+            <tr>
+              <td><strong>react-papaparse</strong></td>
+              <td>備品一覧のCSV出力（クライアントサイド生成）</td>
+            </tr>
+            <tr>
+              <td><strong>@react-pdf-viewer/core</strong></td>
+              <td>添付PDFのインライン表示</td>
+            </tr>
+            <tr>
+              <td><strong>react-player</strong></td>
+              <td>動画・YouTube再生プレーヤー</td>
+            </tr>
+            <tr>
+              <td><strong>wavesurfer.js + @wavesurfer/react</strong></td>
+              <td>音声ファイルのWaveform表示・再生</td>
+            </tr>
+            <tr>
+              <td><strong>sharp</strong> (BE)</td>
+              <td>画像サムネイル自動生成</td>
+            </tr>
+            <tr>
+              <td><strong>cheerio</strong> (BE)</td>
+              <td>URL登録時のOGP情報自動取得</td>
+            </tr>
+            <tr>
+              <td><strong>zustand</strong></td>
+              <td>UIの状態管理（検索ドロワー開閉の永続化等）</td>
+            </tr>
+            <tr>
+              <td><strong>lucide-react</strong></td>
+              <td>アイコン管理（一元管理ファイルで集約）</td>
+            </tr>
+            <tr>
+              <td><strong>sonner</strong></td>
+              <td>トースト通知（操作成功/失敗のフィードバック）</td>
+            </tr>
+            <tr>
+              <td><strong>date-fns</strong></td>
+              <td>日付フォーマット、日付操作</td>
+            </tr>
+            <tr>
+              <td><strong>motion</strong></td>
+              <td>UIアニメーション</td>
+            </tr>
+            <tr>
+              <td><strong>@radix-ui/*</strong></td>
+              <td>
+                shadcn/ui のベース（Dialog, DropdownMenu, Tabs, Select等）
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="server"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          バックエンド固有
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ライブラリ</th>
+              <th>使用箇所</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>@hono/zod-validator</strong></td>
+              <td>APIリクエストのバリデーション（Zodスキーマ連携）</td>
+            </tr>
+            <tr>
+              <td><strong>@google-cloud/tasks</strong></td>
+              <td>Cloud Tasks連携（非同期タスク処理）</td>
+            </tr>
+            <tr>
+              <td><strong>@supabase/supabase-js</strong></td>
+              <td>Supabase Admin クライアント（Storage操作、認証検証）</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ===== 14. データベース設計 ===== -->
+      <section id="sec16" class="section">
+        <h2><span class="sec-num">16</span> データベース設計</h2>
+
+        <h3>
+          <i
+            data-lucide="database"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          テーブル構成
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>テーブル</th>
+              <th>用途</th>
+              <th>主要カラム/特記事項</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Equipment</strong></td>
+              <td>備品マスタ</td>
+              <td>
+                管理番号、品目FK、保管場所FK、状態、使用状況、重量、寸法、購入区分
+              </td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentImage</strong></td>
+              <td>備品画像</td>
+              <td>パス、メインフラグ、表示順</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentAttachment</strong></td>
+              <td>備品添付資料</td>
+              <td>
+                ソースタイプ、ファイルタイプ、パス/URL、サムネイル、表示順
+              </td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentCompany</strong></td>
+              <td>備品-企業中間</td>
+              <td>ロール（メーカー/購入先/メンテ）。1備品1ロールにつき1企業</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentStatusHistory</strong></td>
+              <td>状態変更履歴</td>
+              <td>論理削除可能</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentSiteUsageHistory</strong></td>
+              <td>現場使用履歴</td>
+              <td>シート連動で自動作成</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentTransferHistory</strong></td>
+              <td>移管履歴</td>
+              <td>スナップショット名称保持</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentMaintenanceHistory</strong></td>
+              <td>メンテナンス履歴</td>
+              <td>論理削除可能</td>
+            </tr>
+            <tr>
+              <td><strong>EquipmentLoanHistory</strong></td>
+              <td>貸出履歴</td>
+              <td>スナップショット名称保持</td>
+            </tr>
+            <tr>
+              <td><strong>Company</strong></td>
+              <td>企業マスタ</td>
+              <td>論理削除可能</td>
+            </tr>
+            <tr>
+              <td><strong>CompanyCategoryAssignment</strong></td>
+              <td>企業カテゴリ中間</td>
+              <td>1企業が複数カテゴリ保持可能</td>
+            </tr>
+            <tr>
+              <td><strong>CompanyContact</strong></td>
+              <td>連絡先</td>
+              <td>代表フラグ、複数登録可能</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>
+          <i
+            data-lucide="zap"
+            style="width: 18px; height: 18px; color: #2563eb"
+          ></i>
+          インデックス設計
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>対象</th>
+              <th>インデックス</th>
+              <th>種別</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Equipment.managementCode</td>
+              <td>@unique</td>
+              <td>一意制約</td>
+            </tr>
+            <tr>
+              <td>Equipment.itemId</td>
+              <td>@@index</td>
+              <td>品目による検索</td>
+            </tr>
+            <tr>
+              <td>Equipment.storageLocationId</td>
+              <td>@@index</td>
+              <td>保管場所による検索</td>
+            </tr>
+            <tr>
+              <td>Equipment.condition</td>
+              <td>@@index</td>
+              <td>状態による検索</td>
+            </tr>
+            <tr>
+              <td>Equipment.purchaseType</td>
+              <td>@@index</td>
+              <td>購入区分による検索</td>
+            </tr>
+            <tr>
+              <td>Equipment（active）</td>
+              <td>部分インデックス</td>
+              <td><code>WHERE deleted_at IS NULL</code>（PostgreSQL）</td>
+            </tr>
+            <tr>
+              <td>Company.name</td>
+              <td>@@index</td>
+              <td>企業名による検索</td>
+            </tr>
+            <tr>
+              <td>EquipmentCompany</td>
+              <td>@@unique([equipmentId, role])</td>
+              <td>1備品1ロール1企業の一意制約</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          <i
+            data-lucide="info"
+            style="width: 14px; height: 14px"
+            class="callout-icon"
+          ></i>
+          論理削除のフィルタにはPostgreSQLの部分インデックス（<code
+            >WHERE deleted_at IS NULL</code
+          >）を使用し、アクティブなレコードのみを効率的に検索可能にしています。Prismaでは直接定義できないため、マイグレーションSQLで作成。
+        </div>
+      </section>
+
+      <!-- デモ動画セクション moved to sec2 area -->
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="footer">
+      <p>Genzai — 現場資材管理アプリケーション | システム課 | 2026.3.14</p>
+    </footer>
+
+    <script>
+      lucide.createIcons()
+    </script>
+  </body>
+</html>
